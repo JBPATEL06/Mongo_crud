@@ -46,19 +46,37 @@ const showUsers = async (req, res) => {
   }
 };
 
+
 const updateUser = async (req, res) => {
   try {
-    const username = req.body.username;
-    const phone = req.body.phone;
+    const { username, phone } = req.body;
     const email = req.params.email;
-    const updateQuery = await User.findOneAndUpdate({email:email},{$set :{username : username, phone :phone}},{new : true}  )
+
+    // Find the existing user first to get their current image path if needed
+    const existingUser = await User.findOne({ email });
+    if (!existingUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Build update object
+    const updateData = { username, phone };
+
+    // If a new file was uploaded by multer, update the userProfile path
+    if (req.file) {
+      updateData.userProfile = req.file.path; // or 'uploads/' + req.file.filename depending on your setup
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      { email: email },
+      { $set: updateData },
+      { new: true }
+    );
     
-    res.json(updateQuery);
+    res.json(updatedUser);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
- 
 const deleteUser = async (req, res) => {
   try {
     const email = req.params.email;

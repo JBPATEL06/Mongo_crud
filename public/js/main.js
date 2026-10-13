@@ -5,20 +5,27 @@ const userTable = document.getElementById('showUser');
 const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
 const pageInfo = document.getElementById('pageInfo');
+const form = document.getElementById('userForm');
 
 let pageNo = 1;
+let isEditMode = false; 
+let currentEditEmail = null; // Store email for update payload
 
 addUserBtn.addEventListener('click', () => {
+    isEditMode = false;
+    currentEditEmail = null;
+    let emailField = document.getElementById('email');
+    emailField.disabled = false;
+    form.reset();
     userDialog.showModal();
 });
 
-
-
-const form = document.getElementById('userForm');
-
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    await handleFormSubmit();
+});
 
+const handleFormSubmit = async () => {
     let username = document.getElementById('username').value.trim();
     let email = document.getElementById('email').value.trim();
     let phone = document.getElementById('phone').value.trim();
@@ -32,46 +39,48 @@ form.addEventListener('submit', async (e) => {
             : '';
 
     document.getElementById('phoneError').textContent =
-       /^\d{10}$/.test(phone)
+        !/^\d{10}$/.test(phone)
             ? 'Enter valid 10-digit phone'
             : '';
 
     if (
         username.length >= 3 &&
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && /^[6-9]\d{9}$/.test(phone)
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && 
+        /^\d{10}$/.test(phone)
     ) {
         try {
             const formData = new FormData(form);
 
-            const response = await fetch('/createUser', {
-                method: 'POST',
+            // Choose endpoint and method dynamically based on mode
+            const url = isEditMode ? `/updateUser/${currentEditEmail}` : '/createUser';
+            const method = isEditMode ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
                 body: formData
             });
 
             const result = await response.json();
 
             if (response.ok) {
-                alert('User created successfully!');
+                alert(isEditMode ? 'User updated successfully!' : 'User created successfully!');
                 form.reset();
                 userDialog.close();
                 fetchUsers(); 
             } else {
-                alert(result.message || 'Failed to create user');
+                alert(result.message || 'Operation failed');
             }
         } catch (error) {
             console.error('API error:', error);
             alert('Unable to connect to the server');
         }
     }
-});
+};
 
 cancelBtn.addEventListener('click', () => {
     form.reset();
     userDialog.close();
 });
-
-
-
 
 const updatePaginationUI = () => {
     pageInfo.textContent = `Page: ${pageNo}`;
@@ -134,42 +143,45 @@ fetchUsers();
 
 userTable.addEventListener('click', async (e) => {
     if (e.target.classList.contains('btn-warning')) {
-
+        isEditMode = true;
         const email = e.target.getAttribute('data-email');
+        currentEditEmail = email;
         console.log('Edit clicked for user email:', email);
-        userDialog.showModal();
-    const user_data = await fetch(`/findOneUser/${email}`);
-    const userData =  await user_data.json();
-    let form_email = document.getElementById('email');
-    let form_username =  document.getElementById('username'); 
-    let form_phone = document.getElementById('phone');
-    form_email.value = userData.email;
-    form_email.disabled = true;
-    form_username.value = userData.username; 
-    form_phone.value = userData.phone;
         
-     
+        try {
+            const user_data = await fetch(`/findOneUser/${email}`);
+            const userData = await user_data.json();
+            
+            let form_email = document.getElementById('email');
+            let form_username = document.getElementById('username'); 
+            let form_phone = document.getElementById('phone');
+            
+            form_email.value = userData.email;
+            form_email.disabled = true; // Lock email field during update
+            form_username.value = userData.username; 
+            form_phone.value = userData.phone;
+            
+            userDialog.showModal();
+        } catch (err) {
+            console.error('Error loading user data:', err);
+        }
     }
 
     if (e.target.classList.contains('btn-danger')) {
         const email = e.target.getAttribute('data-email').trim();
         console.log('Delete clicked for user email:', email);  
 
-        try{
-        const response = await fetch(`/deleteUser/${email}`,{method : 'DELETE'});
-        const deleteResult = await response.json();
-        if(response.ok){
-            alert('User Deleted Successfully');
-        }
-        else{       
-            alert('deleteResult.message' || 'Failed to delete user')
+        try {
+            const response = await fetch(`/deleteUser/${email}`, { method: 'DELETE' });
+            const deleteResult = await response.json();
+            if (response.ok) {
+                alert('User Deleted Successfully');
+                fetchUsers();
+            } else {       
+                alert(deleteResult.message || 'Failed to delete user');
+            }
+        } catch (err) {
+            console.error('API error:', err);
         }
     }
-    catch(err){
-        console.error('API error:', err);
-    }
-
-    fetchUsers();
-}
-
 });
