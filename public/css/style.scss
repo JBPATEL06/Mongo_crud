@@ -1,0 +1,35 @@
+.table-container {
+    width: 80%;
+    margin: 50px auto 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th{
+    border: 1px solid #ddd;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+    margin-top: 10px;
+}
+dialog {
+    border: none;
+    border-radius: 10px;
+    padding: 25px;
+    width: 350px;
+}
+
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"]{
+        width: 100%;
+}
