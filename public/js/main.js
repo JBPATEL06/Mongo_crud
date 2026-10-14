@@ -6,10 +6,12 @@ const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
 const pageInfo = document.getElementById('pageInfo');
 const form = document.getElementById('userForm');
+const searchForm = document.getElementById('search-form');
+const searchInput = document.getElementById('site-search');
 
 let pageNo = 1;
 let isEditMode = false; 
-let currentEditEmail = null; // Store email for update payload
+let currentEditEmail = null; 
 
 addUserBtn.addEventListener('click', () => {
     isEditMode = false;
@@ -51,7 +53,6 @@ const handleFormSubmit = async () => {
         try {
             const formData = new FormData(form);
 
-            // Choose endpoint and method dynamically based on mode
             const url = isEditMode ? `/updateUser/${currentEditEmail}` : '/createUser';
             const method = isEditMode ? 'PUT' : 'POST';
 
@@ -157,7 +158,7 @@ userTable.addEventListener('click', async (e) => {
             let form_phone = document.getElementById('phone');
             
             form_email.value = userData.email;
-            form_email.disabled = true; // Lock email field during update
+            form_email.disabled = true; 
             form_username.value = userData.username; 
             form_phone.value = userData.phone;
             
@@ -183,5 +184,55 @@ userTable.addEventListener('click', async (e) => {
         } catch (err) {
             console.error('API error:', err);
         }
+    }
+});
+
+
+
+
+searchForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const searchTerm = searchInput.value.trim();
+
+    try {
+        const response = await fetch(`/search?q=${encodeURIComponent(searchTerm)}`);
+        const users = await response.json();
+
+        userTable.innerHTML = `
+            <tr>
+                <th>UserName</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Image</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+        `;
+
+        if (Array.isArray(users) && users.length > 0) {
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>${user.phone}</td>
+                    <td>${user.userProfile ? `<img src="/${user.userProfile}" width="40" height="40" style="object-fit: cover; border-radius: 50%;">` : 'No Image'}</td>
+                    <td><button class="btn btn-sm btn-warning" data-email="${user.email}">Edit</button></td>
+                    <td><button class="btn btn-sm btn-danger" data-email="${user.email}">Delete</button></td>
+                `;
+                userTable.appendChild(row);
+            });
+        } else {
+            userTable.innerHTML += `<tr><td colspan="6" style="text-align: center;">No matching users found</td></tr>`;
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+    }
+});
+
+searchInput.addEventListener('input', (e) => {
+    if (e.target.value.trim() === '') {
+        pageNo = 1;
+        fetchUsers();
     }
 });
