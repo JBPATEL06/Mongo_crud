@@ -10,6 +10,7 @@ const searchForm = document.getElementById('search-form');
 const searchInput = document.getElementById('site-search');
 
 let pageNo = 1;
+let currentSearch = '';
 let isEditMode = false; 
 let currentEditEmail = null; 
 
@@ -52,7 +53,7 @@ const handleFormSubmit = async () => {
     ) {
         try {
             const formData = new FormData(form);
-
+            
             const url = isEditMode ? `/updateUser/${currentEditEmail}` : '/createUser';
             const method = isEditMode ? 'PUT' : 'POST';
 
@@ -90,7 +91,12 @@ const updatePaginationUI = () => {
 
 const fetchUsers = async () => {
     try {
-        const response = await fetch('/users?page=' + pageNo);
+        let url = `/users?page=${pageNo}`;
+        if (currentSearch) {
+            url = `/search?q=${encodeURIComponent(currentSearch)}&page=${pageNo}`;
+        }
+
+        const response = await fetch(url);
         const users = await response.json();
 
         userTable.innerHTML = `
@@ -121,6 +127,8 @@ const fetchUsers = async () => {
             pageNo--;
             fetchUsers();
             return;
+        } else if (currentSearch && pageNo === 1) {
+            userTable.innerHTML += `<tr><td colspan="6" style="text-align: center;">No matching users found</td></tr>`;
         }
         updatePaginationUI();
     } catch (error) {
@@ -139,6 +147,9 @@ nextBtn.addEventListener('click', () => {
     pageNo++;
     fetchUsers();
 });
+
+fetchUsers();
+
 
 fetchUsers();
 
@@ -230,8 +241,16 @@ searchForm.addEventListener('submit', async (e) => {
     }
 });
 
+searchForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    currentSearch = searchInput.value.trim();
+    pageNo = 1; 
+    fetchUsers();
+});
+
 searchInput.addEventListener('input', (e) => {
     if (e.target.value.trim() === '') {
+        currentSearch = '';
         pageNo = 1;
         fetchUsers();
     }

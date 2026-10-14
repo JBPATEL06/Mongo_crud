@@ -102,13 +102,16 @@ const deleteUser = async (req, res) => {
 const searchUsers = async (req, res) => {
   try {
     const searchTerm = req.query.q;
-    
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5; // Keep this consistent with your showUsers limit
+    const skip = (page - 1) * limit;
+
     const users = await User.find({
       $or: [
         { username: { $regex: searchTerm, $options: 'i' } },
         { email: { $regex: searchTerm, $options: 'i' } }
       ]
-    }).sort({ createdAt: -1 });
+    }).sort({ createdAt: -1 }).skip(skip).limit(limit);
 
     res.json(users);
   } catch (error) {
