@@ -1,3 +1,5 @@
+const BASE_URL = window.location.port === '5000' ? '' : 'http://localhost:5000';
+
 const addUserBtn = document.getElementById('addUserBtn');
 const userDialog = document.getElementById('userDialog');
 const cancelBtn = document.getElementById('cancelBtn');
@@ -54,7 +56,7 @@ const handleFormSubmit = async () => {
         try {
             const formData = new FormData(form);
             
-            const url = isEditMode ? `/updateUser/${currentEditEmail}` : '/createUser';
+            const url = isEditMode ? `${BASE_URL}/updateUser/${currentEditEmail}` : `${BASE_URL}/createUser`;
             const method = isEditMode ? 'PUT' : 'POST';
 
             const response = await fetch(url, {
@@ -91,9 +93,9 @@ const updatePaginationUI = () => {
 
 const fetchUsers = async () => {
     try {
-        let url = `/users?page=${pageNo}`;
+        let url = `${BASE_URL}/users?page=${pageNo}`;
         if (currentSearch) {
-            url = `/search?q=${encodeURIComponent(currentSearch)}&page=${pageNo}`;
+            url = `${BASE_URL}/search?q=${encodeURIComponent(currentSearch)}&page=${pageNo}`;
         }
 
         const response = await fetch(url);
@@ -117,8 +119,7 @@ const fetchUsers = async () => {
                     <td>${user.username}</td>
                     <td>${user.email}</td>
                     <td>${user.phone}</td>
-                    <td>${user.userProfile ? `<img src="/${user.userProfile}" width="40" height="40" style="object-fit: cover; border-radius: 50%;">` : 'No Image'}</td>
-                    <td><button class="btn btn-sm btn-warning" data-email="${user.email}">Edit</button></td>
+<td>${user.userProfile ? `<img src="${BASE_URL}/${user.userProfile}?t=${Date.now()}" width="40" height="40" style="object-fit: cover; border-radius: 50%;">` : 'No Image'}</td>                    <td><button class="btn btn-sm btn-warning" data-email="${user.email}">Edit</button></td>
                     <td><button class="btn btn-sm btn-danger" data-email="${user.email}">Delete</button></td>
                 `;
                 userTable.appendChild(row);
@@ -151,7 +152,7 @@ nextBtn.addEventListener('click', () => {
 fetchUsers();
 
 
-fetchUsers();
+// fetchUsers();
 
 userTable.addEventListener('click', async (e) => {
     if (e.target.classList.contains('btn-warning')) {
@@ -161,7 +162,7 @@ userTable.addEventListener('click', async (e) => {
         console.log('Edit clicked for user email:', email);
         
         try {
-            const user_data = await fetch(`/findOneUser/${email}`);
+            const user_data = await fetch(`${BASE_URL}/findOneUser/${email}`);
             const userData = await user_data.json();
             
             let form_email = document.getElementById('email');
@@ -184,7 +185,7 @@ userTable.addEventListener('click', async (e) => {
         console.log('Delete clicked for user email:', email);  
 
         try {
-            const response = await fetch(`/deleteUser/${email}`, { method: 'DELETE' });
+            const response = await fetch(`${BASE_URL}/deleteUser/${email}`, { method: 'DELETE' });
             const deleteResult = await response.json();
             if (response.ok) {
                 alert('User Deleted Successfully');
@@ -206,7 +207,7 @@ searchForm.addEventListener('submit', async (e) => {
     const searchTerm = searchInput.value.trim();
 
     try {
-        const response = await fetch(`/search?q=${encodeURIComponent(searchTerm)}`);
+        const response = await fetch(`${BASE_URL}/search?q=${encodeURIComponent(searchTerm)}`);
         const users = await response.json();
 
         userTable.innerHTML = `
@@ -227,8 +228,7 @@ searchForm.addEventListener('submit', async (e) => {
                     <td>${user.username}</td>
                     <td>${user.email}</td>
                     <td>${user.phone}</td>
-                    <td>${user.userProfile ? `<img src="/${user.userProfile}" width="40" height="40" style="object-fit: cover; border-radius: 50%;">` : 'No Image'}</td>
-                    <td><button class="btn btn-sm btn-warning" data-email="${user.email}">Edit</button></td>
+<td>${user.userProfile ? `<img src="${BASE_URL}/${user.userProfile}?t=${new Date().getTime()}" width="40" height="40" style="object-fit: cover; border-radius: 50%;">` : 'No Image'}</td>                    <td><button class="btn btn-sm btn-warning" data-email="${user.email}">Edit</button></td>
                     <td><button class="btn btn-sm btn-danger" data-email="${user.email}">Delete</button></td>
                 `;
                 userTable.appendChild(row);
@@ -241,12 +241,7 @@ searchForm.addEventListener('submit', async (e) => {
     }
 });
 
-searchForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    currentSearch = searchInput.value.trim();
-    pageNo = 1; 
-    fetchUsers();
-});
+
 
 searchInput.addEventListener('input', (e) => {
     if (e.target.value.trim() === '') {

@@ -23,6 +23,7 @@ const createUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 const findOneUser = async (req,res) => {
   try {
     const email = req.params.email;
@@ -34,6 +35,7 @@ const findOneUser = async (req,res) => {
   }
 
 }
+
 const showUsers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -45,7 +47,6 @@ const showUsers = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 const updateUser = async (req, res) => {
   try {
@@ -74,6 +75,7 @@ const updateUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 const deleteUser = async (req, res) => {
   try {
     const email = req.params.email;
