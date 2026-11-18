@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/user_route');
+const invoiceRoutes = require('./routes/invoice_route');
 const cors = require('cors'); 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/', userRoutes);
+app.use('/', invoiceRoutes);
 connectDB().then(() => {
   const server = app.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
