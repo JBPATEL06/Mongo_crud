@@ -1,4 +1,5 @@
 const Invoice = require('../models/invoice');
+const User = require('../models/user');
 
 const createInvoice = async (req, res) => {
   try {
@@ -6,7 +7,10 @@ const createInvoice = async (req, res) => {
     const price = req.body.price;
     const total = weight * price;
 
+    const user = await User.findOne({ email: req.body.email });
+
     const invoice = new Invoice({
+      userId: user ? user._id : null,
       username: req.body.username,
       email: req.body.email,
       phone: req.body.phone,
@@ -16,6 +20,15 @@ const createInvoice = async (req, res) => {
     });
 
     const savedInvoice = await invoice.save();
+
+    if (user) {
+      if (!user.invoices) {
+        user.invoices = [];
+      }
+      user.invoices.push(savedInvoice._id);
+      await user.save();
+    }
+
     res.json(savedInvoice);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -27,6 +40,16 @@ const findOneInvoice = async (req, res) => {
     const id = req.params.id;
     const invoice = await Invoice.findById(id);
     res.json(invoice);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getUserInvoices = async (req, res) => {
+  try {
+    const email = req.params.email;
+    const invoices = await Invoice.find({ email: email }).sort({ createdAt: -1 });
+    res.json(invoices);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -86,6 +109,12 @@ const deleteInvoice = async (req, res) => {
     if (!deletedInvoice) {
       return res.status(404).json({ message: 'Invoice not found' });
     }
+
+    await User.updateOne(
+      { invoices: id },
+      { $pull: { invoices: id } }
+    );
+
     res.json({ message: 'Invoice deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -94,7 +123,7 @@ const deleteInvoice = async (req, res) => {
 
 const searchInvoices = async (req, res) => {
   try {
-    const searchTerm = req.query.q;
+    const searchTerm = req.query.q || '';
     const page = parseInt(req.query.page) || 1;
     const limit = 5;
     const skip = (page - 1) * limit;
@@ -112,4 +141,12 @@ const searchInvoices = async (req, res) => {
   }
 };
 
-module.exports = { showInvoices, findOneInvoice, createInvoice, updateInvoice, deleteInvoice, searchInvoices };
+module.exports = {
+  showInvoices,
+  findOneInvoice,
+  getUserInvoices,
+  createInvoice,
+  updateInvoice,
+  deleteInvoice,
+  searchInvoices
+};
